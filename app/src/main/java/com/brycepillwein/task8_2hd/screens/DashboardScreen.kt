@@ -2,6 +2,7 @@ package com.brycepillwein.task8_2hd.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.LibraryAddCheck
@@ -46,6 +47,11 @@ fun DashboardScreen(navController: NavController) {
     it.lastReadWordIndex >= wordCount
   }
 
+  val totalCorrect = books.sumOf { it.totalCorrectAnswers }
+  val totalQuizQs = books.sumOf { it.totalQuizzesTaken * 3 }
+  val quizAccuracy = if (totalQuizQs > 0) totalCorrect * 100 / totalQuizQs else 0
+
+
   ScreenWrapper {
     Scaffold(
       containerColor = Color.Transparent,
@@ -86,6 +92,8 @@ fun DashboardScreen(navController: NavController) {
             }
           }
         }
+        Spacer(Modifier.height(8.dp))
+        StatCard("Quiz Accuracy", "$quizAccuracy%", icon = Icons.Default.Assessment)
       }
     }
   }

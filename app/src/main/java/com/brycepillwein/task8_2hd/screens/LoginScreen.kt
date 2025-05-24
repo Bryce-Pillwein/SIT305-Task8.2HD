@@ -13,12 +13,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.brycepillwein.library.components.Btn
 import com.brycepillwein.library.components.ScreenWrapper
 import com.brycepillwein.library.components.Tt
 import com.brycepillwein.task8_2hd.database.UserStorage
-import com.brycepillwein.task8_2hd.viewmodel.StudentSession
-import com.brycepillwein.task8_2hd.viewmodel.StudentSession.email
+import com.brycepillwein.task8_2hd.viewModel.StudentSession
 
 
 @Composable

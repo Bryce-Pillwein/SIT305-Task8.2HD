@@ -15,7 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.brycepillwein.library.components.ScreenWrapper
-import com.brycepillwein.task8_2hd.viewmodel.StudentSession
+import com.brycepillwein.task8_2hd.viewModel.StudentSession
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

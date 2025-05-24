@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,7 +33,9 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
   var book by remember { mutableStateOf<StoredBook?>(null) }
   var isPlaying by remember { mutableStateOf(false) }
   var currentWordIndex by remember { mutableStateOf(0) }
-
+  var sessionStartIndex by remember { mutableStateOf(0) }
+  var showQuizDialog by remember { mutableStateOf(false) }
+  var showResetConfirm by remember { mutableStateOf(false) }
   val settings = SettingsStorage.load(context)
   var readyToRender by remember { mutableStateOf(false) }
 
@@ -43,7 +46,10 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
   }
 
   LaunchedEffect(book) {
-    book?.let { currentWordIndex = it.lastReadWordIndex }
+    book?.let {
+      currentWordIndex = it.lastReadWordIndex
+      sessionStartIndex = it.lastReadWordIndex
+    }
     readyToRender = true
   }
 
@@ -91,6 +97,10 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
               Icon(Icons.Default.Settings, contentDescription = "Settings")
             }
 
+            IconButton(onClick = { showResetConfirm = true }) {
+              Icon(Icons.Default.RestartAlt, contentDescription = "Reset Progress")
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
@@ -98,10 +108,22 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
                 book?.let {
                   val totalWords = it.content.split(" ").size
                   dbHelper.updateProgress(it.id, currentWordIndex, totalWords)
-                }
 
-                navController.popBackStack("dashboard", inclusive = false)
-                Toast.makeText(context, "Book closed", Toast.LENGTH_SHORT).show()
+                  val words = it.content.split(" ")
+                  val readSlice = words
+                    .subList(sessionStartIndex, currentWordIndex.coerceAtMost(words.size))
+                    .joinToString(" ")
+
+                  if (readSlice.split(" ").size < 50) {
+                    Toast.makeText(context, "Read more before taking a quiz", Toast.LENGTH_SHORT).show()
+                    navController.navigate("library")
+                  } else {
+                    navController.currentBackStackEntry
+                      ?.savedStateHandle
+                      ?.set("quizText", readSlice)
+                    showQuizDialog = true
+                  }
+                }
               },
               shape = RoundedCornerShape(4.dp),
               colors = ButtonDefaults.buttonColors(
@@ -151,4 +173,64 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
       }
     }
   }
+
+  /**
+   * TAKE QUIZ
+   */
+  if (showQuizDialog) {
+    AlertDialog(
+      onDismissRequest = { showQuizDialog = false },
+      title = { Text("Take a Quiz?") },
+      text = { Text("You’ve finished reading. Would you like to take a quiz to test your comprehension?") },
+      confirmButton = {
+        TextButton(onClick = {
+          showQuizDialog = false
+          navController.navigate("quiz/${book!!.id}")
+        }) {
+          Text("Take Quiz", color =  Color(90, 200, 240))
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = {
+          showQuizDialog = false
+          navController.popBackStack("dashboard", inclusive = false)
+        }) {
+          Text("Not Now",color =  Color(90, 200, 240))
+        }
+      },
+      containerColor = Color.White,
+      shape = RoundedCornerShape(12.dp)
+    )
+  }
+
+  /**
+   * RESET READING PROGRESS
+   */
+  if (showResetConfirm) {
+    AlertDialog(
+      onDismissRequest = { showResetConfirm = false },
+      confirmButton = {
+        TextButton(onClick = {
+          currentWordIndex = 0
+          sessionStartIndex = 0
+          book?.let {
+            dbHelper.updateProgress(it.id, 0, it.content.split(" ").size)
+          }
+          showResetConfirm = false
+        }) {
+          Text("Reset", color =  Color(90, 200, 240))
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showResetConfirm = false }) {
+          Text("Cancel", color =  Color(90, 200, 240))
+        }
+      },
+      title = { Text("Reset Progress") },
+      text = { Text("Are you sure you want to reset your reading progress for this book?") },
+      containerColor = Color.White,
+      shape = RoundedCornerShape(12.dp)
+    )
+  }
+
 }

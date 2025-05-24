@@ -5,9 +5,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
+import com.brycepillwein.task8_2hd.model.QuizResult
 import com.brycepillwein.task8_2hd.screens.*
 
 
@@ -49,6 +52,45 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
           ReadingScreen(bookId = bookId, navController = navController)
         }
       }
+
+      composable(
+        route = "quiz/{bookId}",
+        arguments = listOf(navArgument("bookId") { type = NavType.IntType })
+      ) { backStack ->
+        val bookId = backStack.arguments!!.getInt("bookId")
+
+        // ✅ Get the quizText passed from ReadingScreen
+        val quizText = navController
+          .previousBackStackEntry
+          ?.savedStateHandle
+          ?.get<String>("quizText") ?: ""
+
+        QuizScreen(
+          bookId = bookId,
+          navController = navController
+        )
+      }
+
+      composable(
+        "quizResults/{bookId}",
+        arguments = listOf(navArgument("bookId") { type = NavType.IntType })
+      ) { backStackEntry ->
+        val results = navController.previousBackStackEntry
+          ?.savedStateHandle
+          ?.get<List<QuizResult>>("quizResults")
+
+        val bookId = backStackEntry.arguments?.getInt("bookId")
+
+        if (results != null && bookId != null) {
+          QuizResultsScreen(
+            bookId = bookId,
+            results = results,
+            navController = navController
+          )
+        }
+      }
+
+
 
     }
   }

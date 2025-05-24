@@ -1,4 +1,4 @@
-package com.brycepillwein.task8_2hd.viewmodel
+package com.brycepillwein.task8_2hd.viewModel
 
 
 object StudentSession {
