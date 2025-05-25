@@ -1,5 +1,6 @@
 package com.brycepillwein.task8_2hd.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,17 +18,23 @@ import com.brycepillwein.library.components.ScreenWrapper
 import com.brycepillwein.task8_2hd.components.ResultCard
 import com.brycepillwein.task8_2hd.database.BookDbHelper
 import com.brycepillwein.task8_2hd.model.QuizResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizResultsScreen(bookId: Int, results: List<QuizResult>, navController: NavController) {
   val context = LocalContext.current
-  val correctCount = results.count { it.correctAnswer == it.userAnswer }
 
+  val correctCount = results.count {
+    it.correctAnswer.trim().equals(it.userAnswer.trim(), ignoreCase = true)
+  }
 
   LaunchedEffect(Unit) {
-    val dbHelper = BookDbHelper(context)
-    dbHelper.updateQuizStats(bookId, correctCount, results.size)
+    withContext(Dispatchers.IO) {
+      val dbHelper = BookDbHelper(context)
+      dbHelper.updateQuizStats(bookId, correctAnswers = correctCount, totalQuestions = results.size)
+    }
   }
 
   ScreenWrapper {
@@ -48,7 +55,10 @@ fun QuizResultsScreen(bookId: Int, results: List<QuizResult>, navController: Nav
         verticalArrangement = Arrangement.spacedBy(24.dp)
       ) {
         item {
-          Text("You scored $correctCount out of ${results.size}", style = MaterialTheme.typography.titleLarge)
+          Text(
+            "You scored $correctCount out of ${results.size}",
+            style = MaterialTheme.typography.titleLarge
+          )
         }
 
         itemsIndexed(results) { index, result ->

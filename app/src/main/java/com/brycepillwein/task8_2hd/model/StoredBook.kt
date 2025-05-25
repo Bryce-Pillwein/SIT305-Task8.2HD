@@ -7,8 +7,8 @@ data class StoredBook(
   val content: String,
   val progress: Float = 0f,
   val lastReadWordIndex: Int = 0,
-
-  var lastQuizScore: Int = -1,  // -1 if no quiz taken
-  var totalQuizzesTaken: Int = 0,
-  var totalCorrectAnswers: Int = 0
+  val lastQuizScore: Int = -1,
+  val totalQuizzesTaken: Int = 0,
+  val totalCorrectAnswers: Int = 0,
+  val totalQuestions: Int = 0
 )

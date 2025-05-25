@@ -48,8 +48,8 @@ fun DashboardScreen(navController: NavController) {
   }
 
   val totalCorrect = books.sumOf { it.totalCorrectAnswers }
-  val totalQuizQs = books.sumOf { it.totalQuizzesTaken * 3 }
-  val quizAccuracy = if (totalQuizQs > 0) totalCorrect * 100 / totalQuizQs else 0
+  val totalQuestions = books.sumOf { it.totalQuestions }
+  val quizAccuracy = if (totalQuestions > 0) totalCorrect * 100 / totalQuestions else 0
 
 
   ScreenWrapper {
@@ -93,7 +93,7 @@ fun DashboardScreen(navController: NavController) {
           }
         }
         Spacer(Modifier.height(8.dp))
-        StatCard("Quiz Accuracy", "$quizAccuracy%", icon = Icons.Default.Assessment)
+        StatCard("Comprehension Accuracy", "$quizAccuracy%", icon = Icons.Default.Assessment)
       }
     }
   }

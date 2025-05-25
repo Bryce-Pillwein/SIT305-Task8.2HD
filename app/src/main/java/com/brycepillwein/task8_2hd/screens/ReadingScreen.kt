@@ -39,12 +39,14 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
   val settings = SettingsStorage.load(context)
   var readyToRender by remember { mutableStateOf(false) }
 
+  // Load book from DB
   LaunchedEffect(bookId) {
     withContext(Dispatchers.IO) {
       book = dbHelper.getBookById(bookId)
     }
   }
 
+  // Initialize positions once book is loaded
   LaunchedEffect(book) {
     book?.let {
       currentWordIndex = it.lastReadWordIndex
@@ -53,10 +55,15 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
     readyToRender = true
   }
 
+  // Periodically save progress
   LaunchedEffect(currentWordIndex) {
     if (book != null && currentWordIndex % 10 == 0) {
       withContext(Dispatchers.IO) {
-        dbHelper.updateProgress(book!!.id, currentWordIndex, book!!.content.split(" ").size)
+        dbHelper.updateProgress(
+          book!!.id,
+          currentWordIndex,
+          book!!.content.split(" ").size
+        )
       }
     }
   }
@@ -64,14 +71,12 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
   ScreenWrapper {
     Scaffold(
       containerColor = Color.Transparent,
-
       topBar = {
-        TopAppBar(title = { Text(book?.title ?: "Speed Reader") },
-          colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent
-          ))
+        TopAppBar(
+          title = { Text(book?.title ?: "Speed Reader") },
+          colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        )
       },
-
       bottomBar = {
         Surface(
           modifier = Modifier
@@ -91,9 +96,7 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
               )
             }
 
-            IconButton(onClick = {
-              navController.navigate("settings")
-            }) {
+            IconButton(onClick = { navController.navigate("settings") }) {
               Icon(Icons.Default.Settings, contentDescription = "Settings")
             }
 
@@ -106,21 +109,33 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
             Button(
               onClick = {
                 book?.let {
+                  // 1) Save current progress
                   val totalWords = it.content.split(" ").size
                   dbHelper.updateProgress(it.id, currentWordIndex, totalWords)
 
+                  // 2) Compute the slice of words read this session
                   val words = it.content.split(" ")
-                  val readSlice = words
-                    .subList(sessionStartIndex, currentWordIndex.coerceAtMost(words.size))
+                  val slice = words
+                    .subList(
+                      sessionStartIndex,
+                      currentWordIndex.coerceAtMost(words.size)
+                    )
                     .joinToString(" ")
 
-                  if (readSlice.split(" ").size < 50) {
-                    Toast.makeText(context, "Read more before taking a quiz", Toast.LENGTH_SHORT).show()
+                  // 3) If too short, bounce back
+                  if (slice.split(" ").size < 50) {
+                    Toast.makeText(
+                      context,
+                      "Read more before taking a quiz",
+                      Toast.LENGTH_SHORT
+                    ).show()
                     navController.navigate("library")
+
+                    // 4) Otherwise stash slice & show quiz dialog
                   } else {
                     navController.currentBackStackEntry
                       ?.savedStateHandle
-                      ?.set("quizText", readSlice)
+                      ?.set("quizText", slice)
                     showQuizDialog = true
                   }
                 }
@@ -137,11 +152,9 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
             }
           }
         }
-      },
-
-
+      }
     ) { innerPadding ->
-      book?.let { book ->
+      book?.let { bk ->
         Column(
           modifier = Modifier
             .padding(innerPadding)
@@ -151,7 +164,7 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
         ) {
           if (readyToRender) {
             SpeedReader(
-              text = book.content,
+              text = bk.content,
               wpm = settings.wpm,
               textSizeSp = settings.textSizeSp,
               fontFamily = settings.fontFamily,
@@ -174,28 +187,28 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
     }
   }
 
-  /**
-   * TAKE QUIZ
-   */
+  // Quiz confirmation dialog
   if (showQuizDialog) {
     AlertDialog(
       onDismissRequest = { showQuizDialog = false },
       title = { Text("Take a Quiz?") },
-      text = { Text("You’ve finished reading. Would you like to take a quiz to test your comprehension?") },
+      text = {
+        Text("You’ve finished reading. Would you like to test your comprehension?")
+      },
       confirmButton = {
         TextButton(onClick = {
           showQuizDialog = false
           navController.navigate("quiz/${book!!.id}")
         }) {
-          Text("Take Quiz", color =  Color(90, 200, 240))
+          Text("Take Quiz", color = Color(90, 200, 240))
         }
       },
       dismissButton = {
         TextButton(onClick = {
           showQuizDialog = false
-          navController.popBackStack("dashboard", inclusive = false)
+          navController.navigate("library")
         }) {
-          Text("Not Now",color =  Color(90, 200, 240))
+          Text("Not Now", color = Color(90, 200, 240))
         }
       },
       containerColor = Color.White,
@@ -203,12 +216,14 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
     )
   }
 
-  /**
-   * RESET READING PROGRESS
-   */
+  // Reset-progress confirmation dialog
   if (showResetConfirm) {
     AlertDialog(
       onDismissRequest = { showResetConfirm = false },
+      title = { Text("Reset Progress") },
+      text = {
+        Text("Are you sure you want to reset your reading progress for this book?")
+      },
       confirmButton = {
         TextButton(onClick = {
           currentWordIndex = 0
@@ -218,19 +233,16 @@ fun ReadingScreen(bookId: Int, navController: NavController) {
           }
           showResetConfirm = false
         }) {
-          Text("Reset", color =  Color(90, 200, 240))
+          Text("Reset", color = Color(90, 200, 240))
         }
       },
       dismissButton = {
         TextButton(onClick = { showResetConfirm = false }) {
-          Text("Cancel", color =  Color(90, 200, 240))
+          Text("Cancel", color = Color(90, 200, 240))
         }
       },
-      title = { Text("Reset Progress") },
-      text = { Text("Are you sure you want to reset your reading progress for this book?") },
       containerColor = Color.White,
       shape = RoundedCornerShape(12.dp)
     )
   }
-
 }

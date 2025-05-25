@@ -1,8 +1,8 @@
 package com.brycepillwein.task8_2hd.components
 
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +19,7 @@ fun QuizList(
   navController: NavController,
   modifier: Modifier = Modifier
 ) {
+  // Track user selections
   val selections = remember { mutableStateMapOf<Int, String>() }
 
   LazyColumn(
@@ -59,28 +60,32 @@ fun QuizList(
     item {
       Button(
         onClick = {
+          // Build list of QuizResult objects
           val resultObjects = items.mapIndexed { index, item ->
-            val answerIndex = when (item.correctAnswer.trim().uppercase()) {
+            val correctIndex = when (item.correctAnswer.trim().uppercase()) {
               "A" -> 0
               "B" -> 1
               "C" -> 2
               "D" -> 3
               else -> -1
             }
-
             QuizResult(
               question = item.question,
               options = item.options,
-              correctAnswer = item.options.getOrNull(answerIndex) ?: "",
+              correctAnswer = item.options.getOrNull(correctIndex) ?: "",
               userAnswer = selections[index] ?: ""
             )
           }
 
-          navController.currentBackStackEntry
-            ?.savedStateHandle
-            ?.set("quizResults", resultObjects)
+          // Grab current NavBackStackEntry and its bookId argument
+          val parent = navController.currentBackStackEntry ?: return@Button
+          val bookId = parent.arguments?.getInt("bookId") ?: return@Button
 
-          navController.navigate("quizResults")
+          // Store the results in the SavedStateHandle
+          parent.savedStateHandle.set("quizResults", resultObjects)
+
+          // Navigate to the parameterized route
+          navController.navigate("quizResults/$bookId")
         },
         enabled = selections.size == items.size,
         modifier = Modifier

@@ -63,6 +63,9 @@ dependencies {
   implementation(libs.androidx.room.common.jvm)
   implementation(libs.androidx.room.runtime.android)
 
+// EPUB → ZIP → HTML → TEXT
+  implementation (libs.jsoup.jsoup)
+
 
   // Core
   implementation(libs.androidx.core.ktx)

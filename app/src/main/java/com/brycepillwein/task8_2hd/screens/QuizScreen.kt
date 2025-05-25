@@ -45,7 +45,7 @@ fun QuizScreen(
       containerColor = Color.Transparent,
       topBar = {
         TopAppBar(
-          title = { Text("Quiz") },
+          title = { Text("Comprehension Quiz") },
           colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent
           )
